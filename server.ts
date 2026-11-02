@@ -515,6 +515,84 @@ ${projectDescription}
   }
 };
 
+// Diagnostic & Test Handler for GET /api/quote, /api/contact, and /api/test-email (Prevents 405 Method Not Allowed)
+app.get(['/api/quote', '/api/contact', '/api/test-email'], async (req: Request, res: Response) => {
+  const isTest = req.query.test === '1' || req.query.send_test === '1' || req.path === '/api/test-email';
+  const recipient = getOfficialRecipient();
+  const transporter = getTransporter();
+  const hasUser = Boolean(process.env.SMTP_USER);
+  const hasPass = Boolean(process.env.SMTP_PASSWORD);
+
+  if (isTest) {
+    if (!transporter) {
+      return res.status(500).json({
+        success: false,
+        message: "Cannot run Zoho SMTP test: SMTP_USER or SMTP_PASSWORD is not configured in environment variables.",
+        recipient,
+        envStatus: {
+          SMTP_HOST: process.env.SMTP_HOST || 'smtppro.zoho.com',
+          SMTP_PORT: process.env.SMTP_PORT || '465',
+          SMTP_USER: hasUser ? process.env.SMTP_USER : 'MISSING',
+          SMTP_PASSWORD: hasPass ? '****** [Configured]' : 'MISSING'
+        }
+      });
+    }
+
+    try {
+      const fromAddress = process.env.EMAIL_FROM || `"Estimation Campus System" <${process.env.SMTP_USER}>`;
+      const testInfo = await transporter.sendMail({
+        from: fromAddress,
+        to: recipient,
+        subject: `Zoho SMTP Verification Test — Estimation Campus Inc. [${new Date().toLocaleTimeString()}]`,
+        text: `Zoho Mail SMTP connection is verified and functioning properly.\n\nAll website inquiries from estimationcampusinc.com will be delivered to: ${recipient}\n\nTimestamp: ${new Date().toISOString()}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 550px;">
+            <div style="background: #0D47A1; color: white; padding: 15px; border-radius: 6px;">
+              <h2 style="margin: 0; font-size: 18px;">Estimation Campus Inc.</h2>
+              <p style="margin: 4px 0 0; font-size: 12px; color: #bfdbfe;">ZOHO SMTP VERIFICATION TEST</p>
+            </div>
+            <div style="padding: 20px 0;">
+              <p style="color: #15803d; font-weight: bold; font-size: 16px;">✓ Zoho Mail SMTP Connection Successful!</p>
+              <p style="color: #334155; font-size: 14px;">Your website forms on <strong>estimationcampusinc.com</strong> are now verified to deliver directly to <strong>${recipient}</strong>.</p>
+              <p style="color: #64748b; font-size: 12px;">Sent via Zoho SMTP (smtppro.zoho.com:465) on ${new Date().toLocaleString('en-US')}.</p>
+            </div>
+          </div>
+        `
+      });
+
+      return res.json({
+        success: true,
+        message: `Zoho SMTP test email successfully delivered to ${recipient}!`,
+        messageId: testInfo.messageId,
+        recipient,
+        timestamp: new Date().toISOString()
+      });
+    } catch (testError: any) {
+      return res.status(500).json({
+        success: false,
+        message: "Zoho SMTP test failed to send.",
+        error: testError.message,
+        hint: "Please ensure you are using a Zoho Application-Specific Password from Zoho Accounts -> Security -> App Passwords."
+      });
+    }
+  }
+
+  // Standard GET response - Never returns 405 Method Not Allowed!
+  return res.json({
+    success: true,
+    status: "active",
+    service: "Estimation Campus Form API",
+    message: "Endpoint is active and ready to receive form inquiries via POST.",
+    recipient,
+    smtpConfigured: Boolean(transporter),
+    smtpHost: process.env.SMTP_HOST || 'smtppro.zoho.com',
+    smtpPort: Number(process.env.SMTP_PORT) || 465,
+    smtpUser: process.env.SMTP_USER || 'info@estimationcampusinc.com',
+    testInstructions: "To send a live test email to info@estimationcampusinc.com, add ?test=1 to this URL.",
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Form submission routes (handles multipart/form-data and urlencoded/json)
 app.post('/api/quote', upload.array('attachments', 5), handleFormSubmission);
 app.post('/api/contact', upload.array('attachments', 5), handleFormSubmission);
