@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Send, 
   CheckCircle2, 
   AlertCircle, 
   Lock, 
-  FileCheck, 
   Clock, 
-  UploadCloud,
-  ExternalLink
+  UploadCloud, 
+  FileText, 
+  X, 
+  Paperclip,
+  Check,
+  ShieldCheck
 } from 'lucide-react';
 import { QuoteFormData, ServiceId } from '../types';
 
@@ -16,6 +19,9 @@ interface QuoteFormProps {
   onSuccess?: () => void;
   isModal?: boolean;
 }
+
+const ALLOWED_EXTENSIONS = ['pdf', 'dwg', 'dxf', 'xlsx', 'xls', 'docx', 'doc', 'jpg', 'jpeg', 'png', 'zip'];
+const MAX_TOTAL_SIZE = 15 * 1024 * 1024; // 15MB
 
 export const QuoteForm: React.FC<QuoteFormProps> = ({ 
   initialService = 'permit-drawings', 
@@ -36,10 +42,68 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
     termsAccepted: true
   });
 
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [referenceId, setReferenceId] = useState('');
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Calculate total attachment size
+  const totalAttachmentBytes = selectedFiles.reduce((acc, f) => acc + f.size, 0);
+  const totalAttachmentMB = (totalAttachmentBytes / (1024 * 1024)).toFixed(2);
+  const isOverSizeLimit = totalAttachmentBytes > MAX_TOTAL_SIZE;
+
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const incomingFiles = Array.from(e.target.files);
+    const validFiles: File[] = [];
+    const invalidNames: string[] = [];
+
+    incomingFiles.forEach((file) => {
+      const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      if (ALLOWED_EXTENSIONS.includes(ext)) {
+        validFiles.push(file);
+      } else {
+        invalidNames.push(file.name);
+      }
+    });
+
+    if (invalidNames.length > 0) {
+      setErrors((prev) => ({
+        ...prev,
+        files: `Unsupported file type: ${invalidNames.join(', ')}. Please upload PDF, DWG, DXF, XLSX, DOCX, JPG, PNG, or ZIP.`
+      }));
+    } else {
+      setErrors((prev) => {
+        const copy = { ...prev };
+        delete copy.files;
+        return copy;
+      });
+    }
+
+    // Combine without duplicates (by filename and size)
+    const combined = [...selectedFiles];
+    validFiles.forEach((vf) => {
+      if (!combined.some((cf) => cf.name === vf.name && cf.size === vf.size)) {
+        if (combined.length < 5) {
+          combined.push(vf);
+        }
+      }
+    });
+
+    setSelectedFiles(combined);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
+  };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -61,62 +125,132 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
     if (!formData.termsAccepted) {
       newErrors.terms = 'Please accept the terms to submit your project requirements';
     }
+    if (isOverSizeLimit) {
+      newErrors.files = `Total attachment size (${totalAttachmentMB} MB) exceeds the 15MB limit. Please upload via a cloud link (Google Drive / OneDrive / Dropbox) instead.`;
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    setSubmissionError(null);
+
+    if (!validate()) {
+      // Scroll to top of form if errors
+      return;
+    }
 
     setIsSubmitting(true);
-    // Simulate real secure API submission
-    setTimeout(() => {
+
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('fullName', formData.fullName.trim());
+      formDataToSend.append('companyName', formData.companyName.trim());
+      formDataToSend.append('email', formData.email.trim());
+      formDataToSend.append('phone', formData.phone.trim());
+      formDataToSend.append('projectLocation', formData.projectLocation.trim());
+      formDataToSend.append('serviceRequired', formData.serviceRequired);
+      formDataToSend.append('projectType', formData.projectType);
+      formDataToSend.append('timeline', formData.timeline);
+      formDataToSend.append('projectDescription', formData.projectDescription.trim());
+      formDataToSend.append('fileLink', formData.fileLink.trim());
+      formDataToSend.append('website_url', honeypot); // Honeypot spam trap
+
+      // Append files
+      selectedFiles.forEach((file) => {
+        formDataToSend.append('attachments', file, file.name);
+      });
+
+      const response = await fetch('/api/quote', {
+        method: 'POST',
+        body: formDataToSend
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setReferenceId(data.referenceId || `EC-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`);
+        setIsSubmitted(true);
+        setSubmissionError(null);
+        if (onSuccess) onSuccess();
+      } else {
+        setSubmissionError(
+          data.message || 
+          "We couldn't submit your inquiry at this time. Please try again or email us directly at info@estimationcampusinc.com."
+        );
+      }
+    } catch (err: any) {
+      console.error('Submission request failed:', err);
+      setSubmissionError(
+        "We couldn't submit your inquiry at this time. Please try again or email us directly at info@estimationcampusinc.com."
+      );
+    } finally {
       setIsSubmitting(false);
-      const generatedRef = `EC-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
-      setReferenceId(generatedRef);
-      setIsSubmitted(true);
-      if (onSuccess) onSuccess();
-    }, 700);
+    }
   };
 
   if (isSubmitted) {
     return (
-      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center">
-        <div className="w-16 h-16 bg-blue-50 text-[#0D47A1] rounded-full flex items-center justify-center mx-auto mb-4">
-          <CheckCircle2 className="w-8 h-8 text-[#0D47A1]" />
+      <div className="bg-white p-8 sm:p-10 rounded-2xl border border-slate-200 shadow-sm text-center animate-in fade-in duration-300">
+        <div className="w-16 h-16 bg-blue-50 text-[#0D47A1] rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
+          <CheckCircle2 className="w-9 h-9 text-[#0D47A1]" />
         </div>
-        <h3 className="text-2xl font-bold text-slate-900">
-          Quote Request Received
+        
+        {/* Exact required confirmation heading & message */}
+        <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          Inquiry Submitted Successfully
         </h3>
-        <p className="text-sm text-slate-600 mt-2 max-w-md mx-auto">
-          Thank you for providing your project details. Our preconstruction coordination team is reviewing your scope.
+        
+        <p className="text-base text-slate-700 mt-3 max-w-xl mx-auto leading-relaxed font-medium">
+          Thank you for contacting Estimation Campus Inc. Your inquiry has been submitted successfully. Our team will review your information and get back to you.
         </p>
 
-        <div className="my-6 p-4 bg-slate-50 border border-slate-200 rounded-xl text-left max-w-md mx-auto space-y-2">
-          <div className="flex justify-between text-xs text-slate-500">
-            <span>Reference Tracking Number:</span>
-            <span className="font-mono font-bold text-slate-900">{referenceId}</span>
+        <div className="my-6 p-5 bg-slate-50 border border-slate-200 rounded-xl text-left max-w-lg mx-auto space-y-2.5">
+          <div className="flex justify-between items-center text-xs text-slate-500 pb-2 border-b border-slate-200">
+            <span className="font-medium">Reference Tracking ID:</span>
+            <span className="font-mono font-bold text-[#0D47A1] text-sm">{referenceId}</span>
           </div>
           <div className="flex justify-between text-xs text-slate-500">
-            <span>Service Scope:</span>
+            <span>Official Recipient:</span>
+            <span className="font-semibold text-slate-800">info@estimationcampusinc.com</span>
+          </div>
+          <div className="flex justify-between text-xs text-slate-500">
+            <span>Primary Service:</span>
             <span className="font-semibold text-slate-800 capitalize">{formData.serviceRequired.replace('-', ' ')}</span>
           </div>
           <div className="flex justify-between text-xs text-slate-500">
-            <span>Estimated Proposal Turnaround:</span>
-            <span className="font-semibold text-slate-800">24 to 48 Hours</span>
+            <span>Contact Email:</span>
+            <span className="font-semibold text-slate-800">{formData.email}</span>
+          </div>
+          <div className="flex justify-between text-xs text-slate-500">
+            <span>Attached Files:</span>
+            <span className="font-semibold text-slate-800">
+              {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) (${totalAttachmentMB} MB)` : 'Cloud link / none'}
+            </span>
+          </div>
+          <div className="flex justify-between text-xs text-slate-500 pt-1">
+            <span>Proposal Response Time:</span>
+            <span className="font-semibold text-emerald-700">24 to 48 Business Hours</span>
           </div>
         </div>
 
-        <div className="text-sm text-slate-600 max-w-md mx-auto space-y-1.5 leading-relaxed">
-          <p>A confirmation email has been logged to <strong className="text-slate-900">{formData.email}</strong>.</p>
-          <p>If you have additional large plan sets (over 50MB), you can email them directly to <a href="mailto:info@estimationcampusinc.com" className="font-semibold text-[#0D47A1] underline">info@estimationcampusinc.com</a> with your reference number.</p>
+        <div className="text-sm text-slate-600 max-w-md mx-auto space-y-2 leading-relaxed">
+          <p>
+            If you need to provide additional large drawing sets (over 50MB) or architectural addenda, you may email them directly to{' '}
+            <a href={`mailto:info@estimationcampusinc.com?subject=Additional Plans - ${referenceId}`} className="font-semibold text-[#0D47A1] underline">
+              info@estimationcampusinc.com
+            </a>{' '}
+            citing reference number <strong className="font-mono text-slate-900">{referenceId}</strong>.
+          </p>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 pt-4 border-t border-slate-100">
           <button
             onClick={() => {
               setIsSubmitted(false);
+              setSelectedFiles([]);
               setFormData({
                 fullName: '',
                 companyName: '',
@@ -131,7 +265,7 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
                 termsAccepted: true
               });
             }}
-            className="text-xs font-semibold text-[#0D47A1] hover:underline"
+            className="text-xs font-bold text-[#0D47A1] hover:text-[#1976D2] hover:underline uppercase tracking-wider"
           >
             Submit Another Project Scope
           </button>
@@ -143,6 +277,33 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       
+      {/* Honeypot field (hidden from real users, caught by spam bots) */}
+      <div className="hidden" aria-hidden="true">
+        <label htmlFor="website_url_check">Leave this field empty</label>
+        <input
+          id="website_url_check"
+          type="text"
+          name="website_url"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+        />
+      </div>
+
+      {/* Submission Error Alert */}
+      {submissionError && (
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-start gap-3 animate-in fade-in">
+          <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-semibold">{submissionError}</p>
+            <p className="text-xs text-red-700">
+              Direct line: <a href="tel:+17138933927" className="font-bold underline">+1 713 893 3927</a> | Email: <a href="mailto:info@estimationcampusinc.com" className="font-bold underline">info@estimationcampusinc.com</a>
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Service Selection */}
       <div>
         <label className="block text-sm font-bold text-slate-800 uppercase tracking-wider mb-2.5">
@@ -237,7 +398,7 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
             type="tel"
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            placeholder="(555) 123-4567"
+            placeholder="(713) 893-3927"
             className={`w-full px-4 py-3 text-sm rounded-lg border bg-white focus:outline-none focus:ring-2 focus:ring-[#0D47A1] ${
               errors.phone ? 'border-red-500' : 'border-slate-300'
             }`}
@@ -256,7 +417,7 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
             type="text"
             value={formData.projectLocation}
             onChange={(e) => setFormData({ ...formData, projectLocation: e.target.value })}
-            placeholder="Dallas, TX"
+            placeholder="Houston, TX"
             className={`w-full px-4 py-3 text-sm rounded-lg border bg-white focus:outline-none focus:ring-2 focus:ring-[#0D47A1] ${
               errors.projectLocation ? 'border-red-500' : 'border-slate-300'
             }`}
@@ -316,24 +477,92 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
         {errors.projectDescription && <p className="text-xs text-red-500 mt-1">{errors.projectDescription}</p>}
       </div>
 
-      {/* Secure Plan Link */}
-      <div>
-        <label className="block text-sm font-bold text-slate-800 mb-1.5">
-          Project Files / Blueprint Link (Optional)
-        </label>
-        <div className="relative">
-          <input
-            type="url"
-            value={formData.fileLink}
-            onChange={(e) => setFormData({ ...formData, fileLink: e.target.value })}
-            placeholder="https://drive.google.com/... or Dropbox / OneDrive / Box link"
-            className="w-full pl-10 pr-4 py-3 text-sm rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0D47A1]"
-          />
-          <UploadCloud className="w-5 h-5 text-slate-400 absolute left-3 top-3.5" />
+      {/* Direct File Upload & Project Link */}
+      <div className="space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <Paperclip className="w-4 h-4 text-[#0D47A1]" />
+              <span>Attach Project Drawings & Specifications (Optional)</span>
+            </label>
+            <span className="text-xs text-slate-500 font-medium">Max 15MB total</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFileChange}
+              accept=".pdf,.dwg,.dxf,.xlsx,.xls,.docx,.doc,.jpg,.jpeg,.png,.zip"
+              className="hidden"
+              id="file-attachment-input"
+            />
+            <label
+              htmlFor="file-attachment-input"
+              className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 hover:border-[#0D47A1] hover:bg-blue-50/50 rounded-lg text-xs font-bold text-slate-700 transition-colors shadow-sm"
+            >
+              <UploadCloud className="w-4 h-4 text-[#0D47A1]" />
+              <span>Choose Files (PDF, DWG, DXF, XLSX, ZIP)</span>
+            </label>
+
+            {selectedFiles.length > 0 && (
+              <span className="text-xs text-slate-600 font-medium">
+                {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''} ({totalAttachmentMB} MB)
+              </span>
+            )}
+          </div>
+
+          {errors.files && (
+            <p className="text-xs text-red-500 mt-2 font-medium">{errors.files}</p>
+          )}
+
+          {/* Attached Files List */}
+          {selectedFiles.length > 0 && (
+            <div className="mt-3 space-y-1.5 max-h-40 overflow-y-auto pr-1">
+              {selectedFiles.map((file, idx) => (
+                <div
+                  key={`${file.name}-${idx}`}
+                  className="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200 text-xs text-slate-700"
+                >
+                  <div className="flex items-center gap-2 truncate pr-2">
+                    <FileText className="w-3.5 h-3.5 text-[#0D47A1] shrink-0" />
+                    <span className="truncate font-medium">{file.name}</span>
+                    <span className="text-slate-400 shrink-0">({(file.size / (1024 * 1024)).toFixed(2)} MB)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFile(idx)}
+                    className="p-1 text-slate-400 hover:text-red-500 rounded transition-colors"
+                    aria-label={`Remove ${file.name}`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <p className="text-sm text-slate-600 mt-1.5 leading-relaxed">
-          Share a secure link to your architectural drawings, specifications, or addenda. You can also email files directly after submission.
-        </p>
+
+        {/* Cloud Link for Large Sets */}
+        <div className="pt-2 border-t border-slate-200/80">
+          <label className="block text-xs font-bold text-slate-700 mb-1">
+            Or Share Cloud Link (Google Drive / OneDrive / Dropbox / Box)
+          </label>
+          <div className="relative">
+            <input
+              type="url"
+              value={formData.fileLink}
+              onChange={(e) => setFormData({ ...formData, fileLink: e.target.value })}
+              placeholder="https://drive.google.com/... or Dropbox / OneDrive / Box link"
+              className="w-full pl-9 pr-4 py-2.5 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0D47A1]"
+            />
+            <UploadCloud className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Recommended for large plan sets over 15MB. All project documents are treated with strict confidentiality.
+          </p>
+        </div>
       </div>
 
       {/* Privacy & Terms Checkbox */}
@@ -362,11 +591,11 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
           {isSubmitting ? (
             <>
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>Analyzing Scope & Preparing Proposal Request...</span>
+              <span>Transmitting Inquiry & Attachments to Estimation Campus...</span>
             </>
           ) : (
             <>
-              <span>Request Free Scope Review & Quote</span>
+              <span>Submit Project Scope & Request Free Proposal</span>
               <Send className="w-4 h-4" />
             </>
           )}
