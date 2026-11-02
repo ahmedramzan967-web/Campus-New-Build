@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://estimationcampusinc.com/sitemap.xml

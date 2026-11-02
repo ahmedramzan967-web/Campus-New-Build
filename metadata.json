@@ -1,0 +1,6 @@
+{
+  "name": "Estimation Campus Inc. — Construction Design & Preconstruction Services",
+  "description": "Professional construction design, permit drawings, quantity takeoffs, project scheduling, 3D renderings, and shop drawings for US builders and contractors.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
