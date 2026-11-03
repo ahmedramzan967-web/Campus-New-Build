@@ -60,7 +60,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenQuote })
         <div className="lg:col-span-5">
           <div className="rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-slate-100 aspect-[4/3]">
             <img
-              src="/src/assets/images/about_studio_clean_1792810902790.jpg"
+              src="/images/about_studio_clean_1792810902790.jpg"
               alt="Estimation Campus architectural design studio and conference room"
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"

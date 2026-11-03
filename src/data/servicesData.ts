@@ -9,7 +9,7 @@ export const SERVICES_DATA: Record<string, ServiceItem> = {
     shortDescription: 'Comprehensive permit plan preparation, architectural drafting, structural drawing coordination, and building department comment responses for residential and commercial construction.',
     metaTitle: 'Permit Support, Design & Drawings | Building Permit Plans | Estimation Campus',
     metaDescription: 'Professional permit drawing packages, architectural drafting, and building department plan-check responses for US residential and commercial projects.',
-    heroImage: '/src/assets/images/service_permit_drawings_clean_1792810880085.jpg',
+    heroImage: '/images/service_permit_drawings_clean_1792810880085.jpg',
     keyOfferings: [
       'Residential Building Permit Drawings (New Construction, Additions, ADUs, Remodels)',
       'Commercial Tenant Improvement (TI) Permit Sets',
@@ -104,7 +104,7 @@ export const SERVICES_DATA: Record<string, ServiceItem> = {
     shortDescription: 'Detailed construction cost estimates, itemized material quantity takeoffs, conceptual budgeting, and bid leveling for general contractors, subcontractors, and developers.',
     metaTitle: 'Construction Estimating & Quantity Takeoff Services | Estimation Campus',
     metaDescription: 'Accurate construction cost estimating, quantity takeoffs, and bid support for US general contractors, subcontractors, and commercial builders.',
-    heroImage: '/src/assets/images/service_estimating_clean_1792810879814.jpg',
+    heroImage: '/images/service_estimating_clean_1792810879814.jpg',
     keyOfferings: [
       'Comprehensive Material Quantity Takeoffs (All 16/50 CSI MasterFormat Divisions)',
       'Detailed Construction Cost Estimates with Material, Labor & Equipment Breakdown',
@@ -199,7 +199,7 @@ export const SERVICES_DATA: Record<string, ServiceItem> = {
     shortDescription: 'Professional CPM baseline schedule creation, resource-loaded milestones, bi-weekly progress updates, and lookahead schedules using Primavera P6 and Microsoft Project.',
     metaTitle: 'Construction Project Scheduling & CPM Baseline Services | Estimation Campus',
     metaDescription: 'Expert construction project scheduling, CPM baseline schedules, logic-driven Gantt charts, and progress tracking for US contractors and developers.',
-    heroImage: '/src/assets/images/service_scheduling_clean_1792810880049.jpg',
+    heroImage: '/images/service_scheduling_clean_1792810880049.jpg',
     keyOfferings: [
       'Critical Path Method (CPM) Baseline Schedule Development',
       'Primavera P6 (.XER) and Microsoft Project (.MPP) Native Deliverables',
@@ -294,7 +294,7 @@ export const SERVICES_DATA: Record<string, ServiceItem> = {
     shortDescription: 'High-impact 3D exterior renderings, interior architectural visualization, daylight studies, and immersive animated walkthroughs for pre-sales, investor pitching, and client sign-offs.',
     metaTitle: 'Architectural 3D Renderings & Walkthroughs | Estimation Campus',
     metaDescription: 'Photorealistic 3D architectural renderings, interior and exterior visualizations, and 3D walkthrough animations for US architects, builders, and developers.',
-    heroImage: '/src/assets/images/service_3d_clean_1792810900802.jpg',
+    heroImage: '/images/service_3d_clean_1792810900802.jpg',
     keyOfferings: [
       'Photorealistic Exterior Architectural 3D Renderings (Day, Dusk, Night Lighting)',
       'Interior Design & Finish Material Visualizations with Accurate Texturing',
@@ -388,7 +388,7 @@ export const SERVICES_DATA: Record<string, ServiceItem> = {
     shortDescription: 'Detailed fabrication shop drawings, structural steel detailing, millwork and casework drawings, MEP coordination, and final field-verified as-built drawing sets for US builders and fabricators.',
     metaTitle: 'Shop Drawings & As-Built Drawing Services | Estimation Campus',
     metaDescription: 'Professional construction shop drawings, fabrication detailing, MEP coordination, and as-built record drawing packages for US contractors.',
-    heroImage: '/src/assets/images/service_shop_clean_1792810902199.jpg',
+    heroImage: '/images/service_shop_clean_1792810902199.jpg',
     keyOfferings: [
       'Structural Steel & Miscellaneous Metals Fabrication Shop Drawings',
       'Architectural Millwork, Cabinetry & Casework Detailing',

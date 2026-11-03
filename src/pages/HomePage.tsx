@@ -104,7 +104,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onOpenQuote }) =
             <div className="lg:col-span-5 relative">
               <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-200 bg-slate-100 aspect-[4/3] lg:aspect-[5/4]">
                 <img
-                  src="/src/assets/images/hero_modern_architecture_1792810878037.jpg"
+                  src="/images/hero_modern_architecture_1792810878037.jpg"
                   alt="Modern architectural glass and steel building structure engineering"
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"

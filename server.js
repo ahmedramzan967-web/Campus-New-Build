@@ -514,6 +514,22 @@ Timestamp: ${(/* @__PURE__ */ new Date()).toISOString()}`,
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });
+var candidateImageDirs = [
+  path.resolve(__dirname, "public/images"),
+  path.resolve(__dirname, "dist/images"),
+  path.resolve(__dirname, "src/assets/images"),
+  path.resolve(__dirname, "images"),
+  path.resolve(__dirname, "../public/images"),
+  path.resolve(__dirname, "../dist/images")
+];
+for (const dir of candidateImageDirs) {
+  if (fs.existsSync(dir)) {
+    app.use(["/images", "/src/assets/images"], express.static(dir, {
+      maxAge: "1y",
+      immutable: true
+    }));
+  }
+}
 app.post("/api/quote", upload.array("attachments", 5), handleFormSubmission);
 app.post("/api/contact", upload.array("attachments", 5), handleFormSubmission);
 app.use((err, _req, res, _next) => {

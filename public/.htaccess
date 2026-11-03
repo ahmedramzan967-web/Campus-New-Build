@@ -3,12 +3,15 @@
   RewriteEngine On
   RewriteBase /
 
+  # Backward compatibility: Redirect legacy /src/assets/images/ requests to /images/
+  RewriteRule ^src/assets/images/(.*)$ images/$1 [L,R=301]
+
   # Allow direct access to existing files and directories
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # Route /api/quote to /api/quote.php if Node server is not active
+  # Route /api/quote and /api/contact to quote.php if Node server is not active
   RewriteRule ^api/quote/?$ api/quote.php [L,QSA]
   RewriteRule ^api/contact/?$ api/quote.php [L,QSA]
 
@@ -16,8 +19,29 @@
   RewriteRule ^ index.html [L]
 </IfModule>
 
-# Security Headers
+# Browser Caching for Instant Loading on Refresh
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType image/x-icon "access plus 1 year"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+</IfModule>
+
+# Cache-Control Headers
 <IfModule mod_headers.c>
+  <FilesMatch "\.(jpg|jpeg|png|webp|svg|ico)$">
+    Header set Cache-Control "max-age=31536000, public, immutable"
+  </FilesMatch>
+  <FilesMatch "\.(css|js)$">
+    Header set Cache-Control "max-age=31536000, public, immutable"
+  </FilesMatch>
+
+  # Security Headers
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "SAMEORIGIN"
   Header set X-XSS-Protection "1; mode=block"

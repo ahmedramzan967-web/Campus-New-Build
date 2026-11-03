@@ -593,6 +593,25 @@ app.get(['/api/quote', '/api/contact', '/api/test-email'], async (req: Request, 
   });
 });
 
+// Serve images with 1-year immutable cache and backward-compatibility aliases
+const candidateImageDirs = [
+  path.resolve(__dirname, 'public/images'),
+  path.resolve(__dirname, 'dist/images'),
+  path.resolve(__dirname, 'src/assets/images'),
+  path.resolve(__dirname, 'images'),
+  path.resolve(__dirname, '../public/images'),
+  path.resolve(__dirname, '../dist/images')
+];
+
+for (const dir of candidateImageDirs) {
+  if (fs.existsSync(dir)) {
+    app.use(['/images', '/src/assets/images'], express.static(dir, {
+      maxAge: '1y',
+      immutable: true
+    }));
+  }
+}
+
 // Form submission routes (handles multipart/form-data and urlencoded/json)
 app.post('/api/quote', upload.array('attachments', 5), handleFormSubmission);
 app.post('/api/contact', upload.array('attachments', 5), handleFormSubmission);
