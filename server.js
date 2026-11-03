@@ -538,6 +538,22 @@ if (fs.existsSync(assetsPath)) {
     immutable: true
   }));
 }
+app.get("/favicon.ico", (_req, res) => {
+  const possiblePaths = [
+    path.resolve(__dirname, "public/favicon.ico"),
+    path.resolve(__dirname, "dist/favicon.ico"),
+    path.resolve(process.cwd(), "public/favicon.ico"),
+    path.resolve(process.cwd(), "dist/favicon.ico")
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      res.setHeader("Content-Type", "image/x-icon");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      return res.sendFile(p);
+    }
+  }
+  res.status(404).end();
+});
 app.get(["/logo.png", "/api/logo"], (_req, res) => {
   const possiblePaths = [
     path.resolve(__dirname, "public/logo.png"),
