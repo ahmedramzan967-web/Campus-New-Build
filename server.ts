@@ -593,6 +593,9 @@ app.get(['/api/quote', '/api/contact', '/api/test-email'], async (req: Request, 
   });
 });
 
+// Ensure .jfif files are served with image/jpeg Content-Type
+express.static.mime.define({ 'image/jpeg': ['jfif'] });
+
 // Serve images with 1-year immutable cache and backward-compatibility aliases
 const candidateImageDirs = [
   path.resolve(__dirname, 'public/images'),
@@ -611,6 +614,36 @@ for (const dir of candidateImageDirs) {
     }));
   }
 }
+
+// Serve public/assets directly with caching
+const assetsPath = fs.existsSync(path.resolve(__dirname, 'public/assets'))
+  ? path.resolve(__dirname, 'public/assets')
+  : path.resolve(__dirname, 'assets');
+if (fs.existsSync(assetsPath)) {
+  app.use('/assets', express.static(assetsPath, {
+    maxAge: '1y',
+    immutable: true
+  }));
+}
+
+// Serve official company logo directly with long-lived cache headers
+app.get(['/logo.png', '/api/logo'], (_req: Request, res: Response) => {
+  const possiblePaths = [
+    path.resolve(__dirname, 'public/logo.png'),
+    path.resolve(__dirname, 'dist/logo.png'),
+    path.resolve(__dirname, 'logo.png'),
+    path.resolve(process.cwd(), 'public/logo.png'),
+    path.resolve(process.cwd(), 'dist/logo.png'),
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      return res.sendFile(p);
+    }
+  }
+  res.redirect('https://drive.google.com/uc?export=view&id=1YS1PZ_yW04AsJaTtEJ_GsOW8eE4yXLbT');
+});
 
 // Form submission routes (handles multipart/form-data and urlencoded/json)
 app.post('/api/quote', upload.array('attachments', 5), handleFormSubmission);

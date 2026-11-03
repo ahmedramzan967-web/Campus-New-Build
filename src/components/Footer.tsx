@@ -10,6 +10,7 @@ import {
   FileText
 } from 'lucide-react';
 import { SERVICES_LIST } from '../data/servicesData';
+import { CompanyLogo } from './CompanyLogo';
 
 import { ServiceId } from '../types';
 
@@ -37,9 +38,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenQuote }) => {
               className="text-left block focus:outline-none py-1 group"
               aria-label="Estimation Campus Inc. Home"
             >
-              <span className="text-xl font-extrabold text-white tracking-tight group-hover:text-blue-400 transition-colors">
-                Estimation Campus Inc.
-              </span>
+              <CompanyLogo variant="footer" loading="lazy" alt="Estimation Campus Inc logo" />
             </button>
 
             <p className="text-sm text-slate-400 leading-relaxed pr-6">

@@ -514,6 +514,7 @@ Timestamp: ${(/* @__PURE__ */ new Date()).toISOString()}`,
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });
+express.static.mime.define({ "image/jpeg": ["jfif"] });
 var candidateImageDirs = [
   path.resolve(__dirname, "public/images"),
   path.resolve(__dirname, "dist/images"),
@@ -530,6 +531,30 @@ for (const dir of candidateImageDirs) {
     }));
   }
 }
+var assetsPath = fs.existsSync(path.resolve(__dirname, "public/assets")) ? path.resolve(__dirname, "public/assets") : path.resolve(__dirname, "assets");
+if (fs.existsSync(assetsPath)) {
+  app.use("/assets", express.static(assetsPath, {
+    maxAge: "1y",
+    immutable: true
+  }));
+}
+app.get(["/logo.png", "/api/logo"], (_req, res) => {
+  const possiblePaths = [
+    path.resolve(__dirname, "public/logo.png"),
+    path.resolve(__dirname, "dist/logo.png"),
+    path.resolve(__dirname, "logo.png"),
+    path.resolve(process.cwd(), "public/logo.png"),
+    path.resolve(process.cwd(), "dist/logo.png")
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      return res.sendFile(p);
+    }
+  }
+  res.redirect("https://drive.google.com/uc?export=view&id=1YS1PZ_yW04AsJaTtEJ_GsOW8eE4yXLbT");
+});
 app.post("/api/quote", upload.array("attachments", 5), handleFormSubmission);
 app.post("/api/contact", upload.array("attachments", 5), handleFormSubmission);
 app.use((err, _req, res, _next) => {

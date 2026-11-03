@@ -19,6 +19,9 @@
   RewriteRule ^ index.html [L]
 </IfModule>
 
+# Ensure correct MIME type for .jfif JPEG images
+AddType image/jpeg .jfif
+
 # Browser Caching for Instant Loading on Refresh
 <IfModule mod_expires.c>
   ExpiresActive On
@@ -34,7 +37,7 @@
 
 # Cache-Control Headers
 <IfModule mod_headers.c>
-  <FilesMatch "\.(jpg|jpeg|png|webp|svg|ico)$">
+  <FilesMatch "\.(jpg|jpeg|jfif|png|webp|svg|ico)$">
     Header set Cache-Control "max-age=31536000, public, immutable"
   </FilesMatch>
   <FilesMatch "\.(css|js)$">
