@@ -13,7 +13,7 @@ import {
   PhoneCall
 } from 'lucide-react';
 import { SERVICES_LIST } from '../data/servicesData';
-import { CompanyLogo } from './CompanyLogo';
+
 import { ServiceId } from '../types';
 
 interface NavbarProps {
@@ -57,7 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, onOpenQ
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between min-h-[88px] md:h-[92px] py-1 gap-8">
+        <div className="flex items-center justify-between h-20 md:h-[88px] gap-8">
           
           {/* Brand Logo */}
           <button 
@@ -65,7 +65,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, onOpenQ
             className="flex items-center text-left group shrink-0 focus:outline-none py-1"
             aria-label="Estimation Campus Inc. Home"
           >
-            <CompanyLogo variant="navbar" loading="eager" alt="Estimation Campus Inc logo" />
+            <img
+              src="/logo.png"
+              alt="Estimation Campus Inc. — Construction Design & Preconstruction Services"
+              className="h-[48px] md:h-[64px] w-auto object-contain transition-opacity group-hover:opacity-90"
+            />
           </button>
 
           {/* Zone 2: 4-5 concise single-line nav links */}

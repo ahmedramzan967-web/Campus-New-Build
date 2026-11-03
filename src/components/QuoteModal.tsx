@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { QuoteForm } from './QuoteForm';
-import { CompanyLogo } from './CompanyLogo';
 import { ServiceId } from '../types';
 
 interface QuoteModalProps {
@@ -44,9 +43,6 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({ isOpen, onClose, initial
         </button>
 
         <div className="mb-6">
-          <div className="mb-3">
-            <CompanyLogo variant="modal" alt="Estimation Campus Inc logo" />
-          </div>
           <span className="text-xs font-bold text-[#0D47A1] uppercase tracking-wider">
             Fast Scope Review
           </span>

@@ -1,6 +1,5 @@
 import React from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { CompanyLogo } from '../components/CompanyLogo';
+import { Building2, ArrowLeft } from 'lucide-react';
 
 interface NotFoundPageProps {
   onNavigate: (path: string) => void;
@@ -9,8 +8,8 @@ interface NotFoundPageProps {
 export const NotFoundPage: React.FC<NotFoundPageProps> = ({ onNavigate }) => {
   return (
     <div className="max-w-2xl mx-auto px-4 py-20 text-center space-y-6">
-      <div className="flex justify-center pb-2">
-        <CompanyLogo variant="header" alt="Estimation Campus Inc logo" />
+      <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#0D47A1] flex items-center justify-center mx-auto">
+        <Building2 className="w-8 h-8" />
       </div>
       
       <span className="text-xs font-bold text-[#0D47A1] uppercase tracking-wider block">
